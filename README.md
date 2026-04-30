@@ -1,97 +1,196 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# CommentsApp 📱
 
-# Getting Started
+A React Native CLI application built with TypeScript that fetches and displays paginated comments from the JSONPlaceholder API with smooth infinite scroll.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+> 📸 Screenshots are available in the `/screenshots` folder of this repository.
 
-## Step 1: Start Metro
+---
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+## Screenshots
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+| List Screen | Detail Screen | Loading State | Pagination |
+|-------------|---------------|---------------|------------|
+| ![List](screenshots/ss_1_list.jpeg) | ![Detail](screenshots/ss_2_detail.jpeg) | ![Loading](screenshots/ss_3_loading.jpeg) | ![Pagination](screenshots/ss_4_pagination.jpeg) |
 
-```sh
-# Using npm
-npm start
+---
 
-# OR using Yarn
-yarn start
+## Tech Stack
+
+| Technology | Purpose |
+|------------|---------|
+| React Native CLI 0.85 | Mobile framework |
+| TypeScript | Type safety |
+| React Navigation v7 (Native Stack) | Screen navigation |
+| JSONPlaceholder API | Data source |
+| React Hooks (useState, useEffect, useCallback) | State management |
+
+---
+
+## Features
+
+- ✅ Paginated FlatList — loads 10 comments at a time
+- ✅ Infinite scroll — automatically loads more on scroll
+- ✅ Full-screen loader on first load
+- ✅ Bottom spinner during pagination
+- ✅ Error state with Retry button
+- ✅ Comment detail screen via navigation params (no re-fetch)
+- ✅ FlatList performance optimizations
+- ✅ Reusable component architecture
+- ✅ TypeScript throughout
+- ✅ Centralized theme (colors, spacing, typography)
+
+---
+
+## Project Structure
+
+```
+CommentsApp/
+├── src/
+│   ├── api/
+│   │   └── comments.ts              # API calls + Comment interface
+│   ├── components/
+│   │   ├── CommentCard.tsx          # Single list row component
+│   │   ├── LoadingFooter.tsx        # Bottom pagination spinner
+│   │   └── ErrorView.tsx           # Error state + retry button
+│   ├── hooks/
+│   │   └── useComments.ts          # All pagination logic
+│   ├── navigation/
+│   │   └── AppNavigator.tsx        # Native stack navigator
+│   ├── screens/
+│   │   ├── CommentsListScreen.tsx  # Screen 1 — paginated list
+│   │   └── CommentDetailScreen.tsx # Screen 2 — full detail
+│   └── theme/
+│       └── index.ts                # Colors, spacing, typography
+├── screenshots/                    # App screenshots
+│   ├── ss_1_list.jpeg              # Comments list screen
+│   ├── ss_2_detail.jpeg            # Comment detail screen
+│   ├── ss_3_loading.jpeg           # Initial loading state
+│   └── ss_4_pagination.jpeg        # Pagination loading state
+├── App.tsx                         # Entry point
+└── README.md
 ```
 
-## Step 2: Build and run your app
+---
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+## Prerequisites
 
-### Android
+- Node.js 18+
+- JDK 17 (Temurin recommended)
+- Android Studio + Android SDK (API 34)
+- Android Emulator or physical Android device
 
-```sh
-# Using npm
+---
+
+## Setup & Run
+
+### 1. Clone the repo
+```bash
+git clone https://github.com/SaranyaSisodia/CommentsApp.git
+cd CommentsApp
+```
+
+### 2. Install dependencies
+```bash
+npm install
+```
+
+### 3. Create local.properties
+Create the file `android/local.properties` and add:
+```
+sdk.dir=C\:/Users/YOUR_USERNAME/AppData/Local/Android/Sdk
+```
+
+### 4. Set JAVA_HOME (Windows)
+```powershell
+$env:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-17.x.x-hotspot"
+$env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
+```
+
+### 5. Start Metro bundler
+```bash
+npm start -- --reset-cache
+```
+
+### 6. Run on Android (new terminal)
+```bash
 npm run android
-
-# OR using Yarn
-yarn android
 ```
 
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
+### 7. If using a physical device
+```powershell
+adb reverse tcp:8081 tcp:8081
+```
+Then launch manually if needed:
+```powershell
+adb shell am start -n com.commentsapp/com.commentsapp.MainActivity -a android.intent.action.MAIN -c android.intent.category.LAUNCHER
 ```
 
-Then, and every time you update your native dependencies, run:
+---
 
-```sh
-bundle exec pod install
+## Pagination Logic
+
+```
+App launches → loads page 1 (10 comments)
+     ↓
+User scrolls to 50% from bottom
+     ↓
+onEndReached fires → loads page 2 (10 more)
+     ↓
+Repeats until all 500 comments loaded
+     ↓
+hasMore = false → stops all further calls
 ```
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+**Guards that prevent duplicate API calls:**
+- `isLoading` — blocks calls during first load
+- `isLoadingMore` — blocks calls during pagination
+- `hasMore` — stops calls when all data is loaded
 
-```sh
-# Using npm
-npm run ios
+---
 
-# OR using Yarn
-yarn ios
+## FlatList Optimizations
+
+| Prop | Value | Purpose |
+|------|-------|---------|
+| `initialNumToRender` | 10 | Only render visible items on mount |
+| `maxToRenderPerBatch` | 10 | Limit items rendered per scroll batch |
+| `windowSize` | 5 | Keep 5 screen-heights of items in memory |
+| `removeClippedSubviews` | true | Unmount off-screen items on Android |
+| `keyExtractor` | `item.id` | Stable keys prevent unnecessary re-renders |
+| `React.memo` | CommentCard | Skip re-render if props unchanged |
+| `useCallback` | renderItem, keyExtractor | Stable function references for FlatList |
+
+---
+
+## Assumptions & Trade-offs
+
+- **Android only** — iOS not configured
+- **No local caching** — data re-fetches on every app restart
+- **Full-screen error state** — error replaces entire screen rather than inline
+- **No search/filter** — bonus feature not implemented due to time constraints
+- **Params-based navigation** — detail screen gets full comment via navigation params, no re-fetch
+- **500 total comments** — pagination stops automatically at page 50
+
+---
+
+## API Reference
+
+```
+Base URL: https://jsonplaceholder.typicode.com
+
+GET /comments?_page={page}&_limit=10
+
+Response shape:
+{
+  id: number,
+  postId: number,
+  name: string,
+  email: string,
+  body: string
+}
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+---
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+*Built by Saranya Sisodia*
+*GitHub: https://github.com/SaranyaSisodia/CommentsApp*
